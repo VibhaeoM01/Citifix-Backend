@@ -2,11 +2,6 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-  phone: {
-    type: String,
-    required: function() { return this.role === 'admin' || this.role === 'staff'; },
-    default: null
-  },
   name: {
     type: String,
     required: [true, 'Name is required'],
@@ -25,40 +20,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters long']
-  },
-  role: {
-    type: String,
-    enum: ['user', 'admin', 'staff'],
-    default: 'user'
-  },
-  department: {
-    type: String,
-    enum: ['Sanitation', 'Water', 'Roads', 'Electricity', 'Other'],
-    required: function() { return this.role === 'admin' || this.role === 'staff'; },
-    default: null
-  },
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  otp: {
-    code: String,
-    expiresAt: Date
-  },
-  complaints: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Complaint'
-  }],
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
   }
-}, {
-  timestamps: true
 });
 
 // Hash password before saving
@@ -79,41 +41,10 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Generate OTP
-userSchema.methods.generateOTP = function() {
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  this.otp = {
-    code: otp,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-  };
-  return otp;
-};
-
-// Verify OTP
-userSchema.methods.verifyOTP = function(otp) {
-  if (!this.otp || !this.otp.code || !this.otp.expiresAt) {
-    return false;
-  }
-  
-  if (new Date() > this.otp.expiresAt) {
-    this.otp = undefined;
-    return false;
-  }
-  
-  if (this.otp.code !== otp) {
-    return false;
-  }
-  
-  this.isVerified = true;
-  this.otp = undefined;
-  return true;
-};
-
 // Remove password from JSON response
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;
-  delete user.otp;
   return user;
 };
 

@@ -12,7 +12,7 @@ const complaintSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'Description is required'],
+    required: false, // Optional, can be filled by ML image-to-text
     trim: true,
     maxlength: [1000, 'Description cannot be more than 1000 characters']
   },
